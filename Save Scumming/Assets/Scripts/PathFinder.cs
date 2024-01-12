@@ -17,9 +17,6 @@ public static class PathFinder
         return s;
     }
 
-
-
-
     public static List<Vector2Int> CalculateShortestPath(int[,] grid, Vector2Int start, Vector2Int destination)
     {
         // Check if the start and destination positions are valid within the grid

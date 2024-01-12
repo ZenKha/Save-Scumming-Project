@@ -322,7 +322,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85f3dfa740c57bb48b620c181e6c0ab9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rotationSpeed: 10
+  rotationSpeed: 50
 --- !u!1 &1421556972
 GameObject:
   m_ObjectHideFlags: 0
@@ -357,7 +357,8 @@ MonoBehaviour:
   - {fileID: 8008971738273347740, guid: 003468b45af994f4ea80f0af7c598f24, type: 3}
   gridSpacing: 1
   centerMap: 1
-  _characters: []
+  _characters:
+  - {fileID: 0}
   _highlightSquare: {fileID: 4944314850024267181, guid: 8f6612699780ea649a7ac403028f1aa9, type: 3}
   _highlightPlace: {fileID: 2100000, guid: 1a74aa722aa640d4d9875a969cf0c934, type: 2}
   _highlightFar: {fileID: 2100000, guid: 56870d2f80cd3364e94c918c69348163, type: 2}

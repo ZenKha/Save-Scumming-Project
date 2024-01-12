@@ -10,8 +10,8 @@ public class PathDrawer : MonoBehaviour
     private void Start()
     {
         lineRenderer.useWorldSpace = false;
-        lineRenderer.startColor = Color.yellow;
-        lineRenderer.endColor = Color.yellow;
+        lineRenderer.startColor = Color.red;
+        lineRenderer.endColor = Color.red;
         UpdatePath();
     }
 
@@ -25,7 +25,7 @@ public class PathDrawer : MonoBehaviour
         lineRenderer.positionCount = points.Count;
         for (int i = 0; i < points.Count; i++)
         {
-            lineRenderer.SetPosition(i, new Vector3(points[i].x, 0f, points[i].z));
+            lineRenderer.SetPosition(i, new Vector3(points[i].x, -0.45f, points[i].z));
         }
     }
 

@@ -9,10 +9,6 @@ public class CharacterClass : ScriptableObject
     [SerializeField] private string _name;
     [SerializeField] private int _movementRange;
 
-
     public string Name => _name;
     public int MovementRange => _movementRange;
-
-
-
 }

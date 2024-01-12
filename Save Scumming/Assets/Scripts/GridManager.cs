@@ -23,7 +23,6 @@ public class GridManager : MonoBehaviour
     [SerializeField] private float gridSpacing = 1f; // Spacing between grid elements
     [SerializeField] private bool centerMap = true; // Whether to center the map or not
 
-
     private float offsetX;
     private float offsetZ;
 
@@ -52,7 +51,6 @@ public class GridManager : MonoBehaviour
                     GameObject prefab = prefabs[prefabIndex];
 
                     // Calculate the position for the prefab based on the grid spacing and offset
-                    //Vector3 position = new Vector3(col * gridSpacing + offsetX, 0f, row * gridSpacing + offsetZ);
                     Vector3 position = GridToWorldPosition(new Vector2Int(row, col));
 
                     // Instantiate the prefab at the calculated position
@@ -74,22 +72,22 @@ public class GridManager : MonoBehaviour
         }
     }
 
-
     [SerializeField] List<GameCharacter> _characters;
-
+    [SerializeField][Range(0f, 5f)] float CharacterYOffset; // 1.25 funciona por agora
 
     private void PlaceCharacters()
     {
-        int p = 0;
+        int p = Mathf.FloorToInt(grid.GetLength(1)/2 - _characters.Count/2) - 1;
+        int r = grid.GetLength(0) - 1;
         foreach (var c in _characters)
         {
             // posição definida à serralheiro
-            c.SetGrid(p, 0, GridToWorldPosition(new(p, 0)));
+            Vector3 vec = GridToWorldPosition(new(r, p));
+            vec.y += CharacterYOffset;
+            c.SetGrid(r, p, vec);
             p++;
         }
     }
-
-
 
     private void Start()
     {
@@ -97,20 +95,16 @@ public class GridManager : MonoBehaviour
         PlaceCharacters();
     }
 
-
-
-
-
     private Vector2Int startClickPos; // Start click position
     private Vector2Int destinationClickPos; // Destination click position
     private bool isMovementInProgress; // Flag to indicate if movement is in progress
-
 
     private List<GameObject> highlight = new List<GameObject>();
     [SerializeField] GameObject _highlightSquare;
 
     [SerializeField] Material _highlightPlace;
     [SerializeField] Material _highlightFar;
+    [SerializeField] [Range(0f, 1f)] float HighlightYOffset; // 0.51f funciona por agora
 
 
     private void DestroyHighlight ()
@@ -129,9 +123,7 @@ public class GridManager : MonoBehaviour
         // Destroy o highlight anterior
         DestroyHighlight();
 
-
         // Por agora vai à bruta e procura no mapa todo
-
         for (int row = 0; row < rows; row++)
         {
             for (int col = 0; col < cols; col++)
@@ -140,7 +132,7 @@ public class GridManager : MonoBehaviour
                 {
                     Vector3 position = GridToWorldPosition(new Vector2Int(row, col));
                     // offset em Y feito com magic number mas à calceteiro
-                    position.y += 0.6f;
+                    position.y += HighlightYOffset;
                     GameObject instantiatedPrefab = Instantiate(_highlightSquare, position, Quaternion.identity);
                     instantiatedPrefab.GetComponent<MeshRenderer>().material = _highlightPlace;
                     highlight.Add(instantiatedPrefab);
@@ -161,13 +153,11 @@ public class GridManager : MonoBehaviour
 
                 var distance = pathToThisPlace.Count;
 
-                
-
-                if (distance < _selectedCharacter.CharacterClass.MovementRange)
+                if (distance <= _selectedCharacter.CharacterClass.MovementRange)
                 {
                     Vector3 position = GridToWorldPosition(new Vector2Int(row, col));
                     // offset em Y feito com magic number mas à carpinteiro
-                    position.y += 0.6f;
+                    position.y += HighlightYOffset;
                     GameObject instantiatedPrefab = Instantiate(_highlightSquare, position, Quaternion.identity);
 
                     //if (distance < 4)
@@ -177,18 +167,11 @@ public class GridManager : MonoBehaviour
                     
                     highlight.Add(instantiatedPrefab);
                 }
-
-
-
             }
         }
     }
 
-
     private GameCharacter _selectedCharacter;
-
-
-
     private bool isMoving = false;
 
     public void MapClick(int x, int y)
@@ -197,8 +180,6 @@ public class GridManager : MonoBehaviour
         {
             return;
         }
-
-
 
         if (!isMovementInProgress)
         {
@@ -215,7 +196,7 @@ public class GridManager : MonoBehaviour
             isMovementInProgress = true;
             Debug.Log("Initial position set: " + startClickPos);
 
-            // Highlight all neighbour cells in a rage
+            // Highlight all neighbour cells in a range
             Highlight(x, y);
 
         }
@@ -237,29 +218,45 @@ public class GridManager : MonoBehaviour
             // Há sempre _selectedCharacter?
             // Se estiver null foi por alguma estupidez
             //_selectedCharacter.SetGrid(x, y, GridToWorldPosition(new(x, y)));
-
  
             pathAnimation = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, destinationClickPos);
             StartCoroutine(MoveCharacter());
-
 
             GetComponent<PathDrawer>().UpdatePath(null);
             DestroyHighlight();
             isMovementInProgress = false;
             destinationClickPos = new Vector2Int(-1, -1);
-
-
-
         }
         else
         {
-
             var characterInDestination = _characters.Find(c => c.GridX == x && c.GridY == y);
 
-            // There is a player in the desired destination
+            // Player clicked in a different character
             if (characterInDestination != null)
             {
-                // Cancels movement
+                // Change to new character
+                _selectedCharacter = characterInDestination;
+                startClickPos = new Vector2Int(x, y);
+                Debug.Log("Initial position set: " + startClickPos);
+
+                // Highlight all neighbour cells in a range
+                Highlight(x, y);
+
+                return;
+            }
+
+            var pathToThisPlace = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, new(x, y));
+
+            if (pathToThisPlace == null)
+            {
+                return;
+            }
+
+            var distance = pathToThisPlace.Count;
+
+            // If the click is out of the character's range, cancel movement
+            if (distance > _selectedCharacter.CharacterClass.MovementRange)
+            {
                 GetComponent<PathDrawer>().UpdatePath(null);
                 DestroyHighlight();
                 isMovementInProgress = false;
@@ -270,8 +267,6 @@ public class GridManager : MonoBehaviour
             // Second click, set the destination position
             destinationClickPos = new Vector2Int(x, y);
             //Debug.Log("Destination position set: " + destinationClickPos);
- 
-
 
             var path = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, destinationClickPos);
             path.Insert(0, startClickPos);
@@ -282,7 +277,6 @@ public class GridManager : MonoBehaviour
     }
 
     List<Vector2Int> pathAnimation;
-
 
     private int[,] AddPlayerToGrid ()
     {
@@ -318,16 +312,15 @@ public class GridManager : MonoBehaviour
         isMoving = true;
         foreach (var p in pathAnimation)
         {
-            _selectedCharacter.SetGrid(p.x, p.y, GridToWorldPosition(new(p.x, p.y)));
+            Vector3 vec = GridToWorldPosition(new(p.x, p.y));
+            vec.y += CharacterYOffset;
+            _selectedCharacter.SetGrid(p.x, p.y, vec);
             yield return new WaitForSeconds(0.2f);
         }
 
         isMoving = false;
         yield return null;
     }
-
-
-
 
     private List<Vector3> ConvertPathToWorld (List<Vector2Int> path)
     {
@@ -348,6 +341,4 @@ public class GridManager : MonoBehaviour
 
         return new Vector3(worldX, worldY, worldZ);
     }
-
-
 }

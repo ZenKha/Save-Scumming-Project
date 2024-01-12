@@ -11,7 +11,7 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
-        transform.Rotate(0, rotationSpeed * Input.GetAxis("Horizontal") * Time.deltaTime, 0);
+        transform.Rotate(0, rotationSpeed * Input.GetAxis("Horizontal") * Time.deltaTime, 0, Space.World);
     }
 
  

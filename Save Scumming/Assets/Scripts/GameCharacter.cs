@@ -15,7 +15,6 @@ public class GameCharacter : MonoBehaviour
 
     public int GridY => _gridY;
 
-
     public void SetGrid(int x, int y, Vector3 worldPosition)
     {
         _gridX = x;
