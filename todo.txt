@@ -1,0 +1,15 @@
+High:
+Sistema de ataques
+	- Into the Breach basicamente
+	- Personagens com 2 "action slots"
+	- Começam com ataque básico (leva upgrades ou pode ser trocado? se calhar fica demasiado semelhante ao ItB)
+	- 2ª action com o job change ou randomly obtained?
+	- Upgrades básicos em level up com uma mudança significativa com um job change
+	- Upgrades de range e dano fáceis de implementar, ver outras opções
+	
+
+Medium:
+Enemy AI (oof)
+
+Low:
+Characters e NPCs viram dependendo da active character

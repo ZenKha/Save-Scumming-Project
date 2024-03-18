@@ -38,11 +38,11 @@ public static class PathFinder
         visited[start.x, start.y] = true;
 
         // Create a queue for BFS traversal
-        Queue<Vector2Int> queue = new Queue<Vector2Int>();
+        Queue<Vector2Int> queue = new();
         queue.Enqueue(start);
 
         // Create a dictionary to store the parent positions for each visited position
-        Dictionary<Vector2Int, Vector2Int> parentMap = new Dictionary<Vector2Int, Vector2Int>();
+        Dictionary<Vector2Int, Vector2Int> parentMap = new();
 
         // Perform BFS until the destination position is reached
         while (queue.Count > 0)

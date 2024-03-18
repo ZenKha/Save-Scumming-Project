@@ -10,7 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c69f15362765ed444a89028012b9c728, type: 3}
-  m_Name: Scout
+  m_Name: Goblin Melee
   m_EditorClassIdentifier: 
-  _name: Scout
-  _movementRange: 6
+  _name: Goblin
+  _movementRange: 5
+  _damage: 3
+  _range: 1
+  _maxHp: 10
+  _hp: 10
