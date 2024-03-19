@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 3814280384507923518}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 0, z: -20}
+  m_LocalPosition: {x: 3.5, y: 0.51, z: 4.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -59,8 +59,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e672de374252c5c4fa8f0f77c7c43db6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _gridX: 0
-  _gridY: 0
+  _gridX: 8
+  _gridY: 9
 --- !u!114 &3596686860793509423
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,7 +76,7 @@ MonoBehaviour:
   _name: Wizard
   _movementRange: 3
   _damage: 8
-  _range: 10
+  _attackRange: 5
   _maxHp: 15
   _hp: 15
 --- !u!1001 &8534131093410824181

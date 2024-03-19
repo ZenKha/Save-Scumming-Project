@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.TextCore.Text;
 using Random = UnityEngine.Random;
 
+public enum SelectState { None, Select, Attack, Block, Rest }
+
 public class GridManager : MonoBehaviour
 {
     [SerializeField] private BattleSystem battleSystem;
@@ -25,7 +27,7 @@ public class GridManager : MonoBehaviour
         {0,0,0,0,0,0,0,0,0,0}
     };
 
-    private List<Block> _blocks = new(); // 2D array of created blocks
+    private readonly List<Block> _blocks = new(); // 2D array of created blocks
 
     [SerializeField] private float gridSpacing = 1f; // Spacing between grid elements
     [SerializeField] private bool centerMap = true; // Whether to center the map or not
@@ -38,15 +40,24 @@ public class GridManager : MonoBehaviour
 
     void Update()
     {
-        if (_selectedCharacter != null)
-        {
-            if (Input.GetButton("Ability1"))
-            {
+        // Ignore all inputs during movement
+        if (isMoving) return;
 
+        if (selectState == SelectState.Select)
+        {
+            if (Input.GetButtonUp("Ability1"))
+            {
+                selectState = SelectState.Attack;
+                DestroyHighlight();
+                HighlightCharacterAttack();
             }
         }
 
-        
+        // Right click, cancel all selections
+        if (Input.GetMouseButtonUp(1))
+        {
+            ResetSelects();
+        }
     }
 
     public IEnumerator CreateMap ()
@@ -109,10 +120,9 @@ public class GridManager : MonoBehaviour
 
                 if (row >= 7)
                 {
-                    Vector3 position = GridToWorldPosition(new Vector2Int(row, col));
-                    position.y += HighlightYOffset;
-                    GameObject instantiatedPrefab = Instantiate(_highlightSquare, position, Quaternion.identity);
-                    highlight.Add(instantiatedPrefab);
+                    Block block = _blocks.Find(b => b.GridX == row && b.GridY == col);
+                    block.HighlightBlock(HighlightType.Close);
+                    highlight.Add(block);
                 }
             }
         }
@@ -156,6 +166,7 @@ public class GridManager : MonoBehaviour
     private GameObject _selectedCharacter;
     List<Vector2Int> pathAnimation;
     private bool isMoving = false;
+    private SelectState selectState = SelectState.None;
 
     private int placeIndex = 0;
 
@@ -203,13 +214,22 @@ public class GridManager : MonoBehaviour
                 return;
             }
 
-            if (_selectedCharacter == null)
+            if (selectState == SelectState.None)
             {
                 // Find character in clicked tile and set it as _selectedCharacter
                 _selectedCharacter = _characters.Find(c => c.GetComponent<UnitMovement>().GridX == x && c.GetComponent<UnitMovement>().GridY == y);
 
+                // If there was no character, ignore click
+                if (_selectedCharacter == null)
+                {
+                    return;
+                }
+
+                // Set SelectState to Select
+                selectState = SelectState.Select;
+
                 // If there is a character in clicked tile AND it has the move token...
-                if (_selectedCharacter != null && _selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
+                if (_selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
                 {
                     // ...set the initial position...
                     startClickPos = new Vector2Int(x, y);
@@ -219,100 +239,106 @@ public class GridManager : MonoBehaviour
                     HighlightCharacterMovement(x, y);
                 }
             }
-            else if (startClickPos == new Vector2Int(x, y))
-            {
-                // Second click is the same as the first, cancel movement
-                _selectedCharacter = null;
-                Debug.Log("Movement canceled");
-                GetComponent<PathDrawer>().UpdatePath(null);
-                DestroyHighlight();
-            }
             else
             {
-                // Player clicked in a different character
-                var characterInDestination = _characters.Find(c => c.GetComponent<UnitMovement>().GridX == x && c.GetComponent<UnitMovement>().GridY == y);
-
-                if (characterInDestination != null)
+                if (selectState == SelectState.Select)
                 {
-                    if (!characterInDestination.GetComponent<PlayerUnitBehaviour>().ActionToken)
+                    if (startClickPos == new Vector2Int(x, y))
                     {
-                        // Second character has no action, cancel move
-                        _selectedCharacter = null;
+                        // Second click is the same as the first, cancel movement
+                        ResetSelects();
                         Debug.Log("Movement canceled");
                         GetComponent<PathDrawer>().UpdatePath(null);
                         DestroyHighlight();
-                        return;
                     }
-
-                    // Change to new character
-                    _selectedCharacter = characterInDestination;
-                    startClickPos = new Vector2Int(x, y);
-                    Debug.Log("Initial position set: " + startClickPos);
-                    DestroyHighlight();
-
-                    if (characterInDestination.GetComponent<PlayerUnitBehaviour>().MoveToken )
+                    else
                     {
-                        // Highlight all neighbour cells in a range
-                        HighlightCharacterMovement(x, y);
+                        // Player clicked in a different character
+                        var characterInDestination = _characters.Find(c => c.GetComponent<UnitMovement>().GridX == x && c.GetComponent<UnitMovement>().GridY == y);
+
+                        if (characterInDestination != null)
+                        {
+                            if (!characterInDestination.GetComponent<PlayerUnitBehaviour>().ActionToken)
+                            {
+                                // Second character has no action, cancel move
+                                ResetSelects();
+                                Debug.Log("Movement canceled");
+                                GetComponent<PathDrawer>().UpdatePath(null);
+                                DestroyHighlight();
+                                return;
+                            }
+
+                            // Change to new character
+                            _selectedCharacter = characterInDestination;
+                            startClickPos = new Vector2Int(x, y);
+                            Debug.Log("Initial position set: " + startClickPos);
+                            DestroyHighlight();
+
+                            if (characterInDestination.GetComponent<PlayerUnitBehaviour>().MoveToken)
+                            {
+                                // Highlight all neighbour cells in a range
+                                HighlightCharacterMovement(x, y);
+                            }
+
+                            return;
+                        }
+
+                        // TODO: Mudar verificação de character para diferenciar entre jogador e inimigo em vez de ter dois ifs
+                        // Checks if clicked block already has a character in it
+                        // Por agora, como o if anterior verifica characters do jogador, isto acaba só por verificar inimigos
+                        Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
+
+                        if (block.GetCharacterInBlock() != null)
+                        {
+                            //if (character é aliado) {
+                            //    faz isto
+                            //}
+                            //else 
+                            //{
+                            //    outra cena
+                            //}
+                            return;
+                        }
+
+                        // Second click
+                        if (!_selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
+                        {
+                            return;
+                        }
+
+                        var pathToThisPlace = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, new(x, y));
+
+                        if (pathToThisPlace == null)
+                        {
+                            return;
+                        }
+
+                        var distance = pathToThisPlace.Count;
+
+                        // If the click is out of the character's range, cancel movement
+                        if (distance > _selectedCharacter.GetComponent<UnitInfo>().MovementRange)
+                        {
+                            ResetSelects();
+                            destinationClickPos = new Vector2Int(-1, -1);
+                            GetComponent<PathDrawer>().UpdatePath(null);
+                            DestroyHighlight();
+                            return;
+                        }
+
+                        // Second click, set the destination position
+                        destinationClickPos = new Vector2Int(x, y);
+
+                        UpdateUnitPosition(_selectedCharacter, x, y);
+                        pathAnimation = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, destinationClickPos);
+                        StartCoroutine(MoveSelectedCharacter());
+                        _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveMoveToken();
+
+                        destinationClickPos = new Vector2Int(-1, -1);
+                        GetComponent<PathDrawer>().UpdatePath(null);
+                        DestroyHighlight();
                     }
-
-                    return;
                 }
-
-                // TODO: Mudar verificação de character para diferenciar entre jogador e inimigo em vez de ter dois ifs
-                // Checks if clicked block already has a character in it
-                // Por agora, como o if anterior verifica characters do jogador, isto acaba só por verificar inimigos
-                Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
-
-                if (block.GetCharacterInBlock() != null)
-                {
-                    //if (character é aliado) {
-                    //    faz isto
-                    //}
-                    //else 
-                    //{
-                    //    outra cena
-                    //}
-                    return;
-                }
-
-                // Second click
-                if (!_selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
-                {
-                    return;
-                }
-
-                var pathToThisPlace = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, new(x, y));
-
-                if (pathToThisPlace == null)
-                {
-                    return;
-                }
-
-                var distance = pathToThisPlace.Count;
-
-                // If the click is out of the character's range, cancel movement
-                if (distance > _selectedCharacter.GetComponent<UnitInfo>().MovementRange)
-                {
-                    _selectedCharacter = null;
-                    destinationClickPos = new Vector2Int(-1, -1);
-                    GetComponent<PathDrawer>().UpdatePath(null);
-                    DestroyHighlight();
-                    return;
-                }
-
-                // Second click, set the destination position
-                destinationClickPos = new Vector2Int(x, y);
-
-                UpdateUnitPosition(_selectedCharacter, x, y);
-                pathAnimation = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, destinationClickPos);
-                StartCoroutine(MoveSelectedCharacter());
-                _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveMoveToken();
-
-                destinationClickPos = new Vector2Int(-1, -1);
-                GetComponent<PathDrawer>().UpdatePath(null);
-                DestroyHighlight();
-            }
+            } 
         }
     }
 
@@ -334,44 +360,47 @@ public class GridManager : MonoBehaviour
 
         if (battleSystem.GetBattleState() == BattleState.PLAYERTURN)
         {
-            if (_selectedCharacter == null || isMoving)
+            if (selectState == SelectState.Select)
             {
-                return;
+                if (_selectedCharacter == null || isMoving)
+                {
+                    return;
+                }
+
+                if (!_selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
+                {
+                    return;
+                }
+
+                Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
+
+                // Player hovered over a different character
+                if (block.GetCharacterInBlock() != null)
+                {
+                    // Erase path
+                    GetComponent<PathDrawer>().UpdatePath(null);
+                    return;
+                }
+
+                var path = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, new(x, y));
+
+                if (path == null)
+                {
+                    return;
+                }
+
+                var distance = path.Count;
+
+                // If the hover is out of the character's range, erase path
+                if (distance > _selectedCharacter.GetComponent<UnitInfo>().MovementRange)
+                {
+                    GetComponent<PathDrawer>().UpdatePath(null);
+                    return;
+                }
+
+                path.Insert(0, startClickPos);
+                GetComponent<PathDrawer>().UpdatePath(ConvertPathToWorld(path)); 
             }
-
-            if (!_selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
-            {
-                return;
-            }
-
-            Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
-
-            // Player hovered over a different character
-            if (block.GetCharacterInBlock() != null)
-            {
-                // Erase path
-                GetComponent<PathDrawer>().UpdatePath(null);
-                return;
-            }
-
-            var path = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, new(x, y));
-
-            if (path == null)
-            {
-                return;
-            }
-
-            var distance = path.Count;
-
-            // If the hover is out of the character's range, erase path
-            if (distance > _selectedCharacter.GetComponent<UnitInfo>().MovementRange)
-            {
-                GetComponent<PathDrawer>().UpdatePath(null);
-                return;
-            }
-
-            path.Insert(0, startClickPos);
-            GetComponent<PathDrawer>().UpdatePath(ConvertPathToWorld(path));
         }
     }
 
@@ -424,12 +453,16 @@ public class GridManager : MonoBehaviour
         return newArray;
     }
 
-    public void ResetTurn()
+    public void ResetSelects()
     {
         _selectedCharacter = null;
+        GetComponent<PathDrawer>().UpdatePath(null);
+        DestroyHighlight();
+        isMoving = false;
+        selectState = SelectState.None;
     }
 
-    private readonly List<GameObject> highlight = new();
+    private readonly List<Block> highlight = new();
 
     [Space(10)] [Header("Highlight Tiles")]
     [SerializeField] GameObject _highlightSquare;
@@ -441,13 +474,15 @@ public class GridManager : MonoBehaviour
     {
         foreach (var g in highlight)
         {
-            Destroy(g);
+            g.DestroyHighlight();
         }
         highlight.Clear();
     }
 
     private void HighlightCharacterMovement(int x, int y)
     {
+        Block block;
+
         // Por agora vai à bruta e procura no mapa todo
         for (int row = 0; row < rows; row++)
         {
@@ -455,12 +490,9 @@ public class GridManager : MonoBehaviour
             {
                 if (row == x && col == y)
                 {
-                    Vector3 position = GridToWorldPosition(new Vector2Int(row, col));
-                    // offset em Y feito com magic number mas à calceteiro
-                    position.y += HighlightYOffset;
-                    GameObject instantiatedPrefab = Instantiate(_highlightSquare, position, Quaternion.identity);
-                    instantiatedPrefab.GetComponent<MeshRenderer>().material = _highlightPlace;
-                    highlight.Add(instantiatedPrefab);
+                    block = _blocks.Find(b => b.GridX == row && b.GridY == col);
+                    block.HighlightBlock(HighlightType.Close);
+                    highlight.Add(block);
                 }
 
                 if (grid[row, col] != 0)
@@ -468,8 +500,7 @@ public class GridManager : MonoBehaviour
                     continue;
                 }
 
-                // falta ver se há personagem
-                Block block = _blocks.Find(b => b.GridX == row && b.GridY == col).GetComponent<Block>();
+                block = _blocks.Find(b => b.GridX == row && b.GridY == col).GetComponent<Block>();
 
                 if (block.GetCharacterInBlock() != null)
                 {
@@ -484,20 +515,94 @@ public class GridManager : MonoBehaviour
                 }
 
                 var distance = pathToThisPlace.Count;
+                var range = _selectedCharacter.GetComponent<UnitInfo>().MovementRange;
 
-                if (distance <= _selectedCharacter.GetComponent<UnitInfo>().MovementRange)
+                if (distance == range)
                 {
-                    Vector3 position = GridToWorldPosition(new Vector2Int(row, col));
-                    // offset em Y feito com magic number mas à carpinteiro
-                    position.y += HighlightYOffset;
-                    GameObject instantiatedPrefab = Instantiate(_highlightSquare, position, Quaternion.identity);
+                    block.HighlightBlock(HighlightType.Far);
+                }
+                else if (distance < range)
+                {
+                    block.HighlightBlock(HighlightType.Close);
+                }
 
-                    //if (distance < 4)
-                    //{
-                    //    instantiatedPrefab.GetComponent<MeshRenderer>().material = _highlightFar;
-                    //}
-                    
-                    highlight.Add(instantiatedPrefab);
+                highlight.Add(block);
+            }
+        }
+    }
+
+    private void HighlightCharacterAttack()
+    {
+        UnitInfo unitInfo = _selectedCharacter.GetComponent<UnitInfo>();
+        int range = unitInfo.AttackRange;
+        UnitMovement unitMovement = _selectedCharacter.GetComponent<UnitMovement>();
+        bool up, down, left, right;
+        up = down = left = right = true;
+        
+        Block block;
+
+        for (int i = 1; i <= range; i++)
+        {
+            if (up)
+            {
+                block = _blocks.Find(b => b.GridX == unitMovement.GridX - i && b.GridY == unitMovement.GridY);
+
+                if (block != null && block.IsClickable)
+                {
+                    block.HighlightBlock(HighlightType.Attack);
+                    highlight.Add(block);
+                }
+                else
+                {
+                    up = false;
+                }
+            }
+
+            if (down)
+            {
+                block = _blocks.Find(b => b.GridX == unitMovement.GridX + i && b.GridY == unitMovement.GridY);
+
+                if (block != null && block.IsClickable)
+                {
+                    block.HighlightBlock(HighlightType.Attack);
+                    highlight.Add(block);
+                }
+                else
+                {
+                    down = false;
+                }
+            } 
+        }
+
+        for (int i = 1; i <= range; i++)
+        {
+            if (right)
+            {
+                block = _blocks.Find(b => b.GridX == unitMovement.GridX && b.GridY == unitMovement.GridY + i);
+
+                if (block != null && block.IsClickable)
+                {
+                    block.HighlightBlock(HighlightType.Attack);
+                    highlight.Add(block);
+                }
+                else
+                {
+                    right = false;
+                }
+            }
+
+            if (left)
+            {
+                block = _blocks.Find(b => b.GridX == unitMovement.GridX && b.GridY == unitMovement.GridY - i);
+
+                if (block != null && block.IsClickable)
+                {
+                    block.HighlightBlock(HighlightType.Attack);
+                    highlight.Add(block);
+                }
+                else
+                {
+                    left = false;
                 }
             }
         }
@@ -542,8 +647,7 @@ public class GridManager : MonoBehaviour
             yield return StartCoroutine(unit.GetComponent<UnitMovement>().SetGridLerp(p.x, p.y, vec));
         }
 
-        isMoving = false;
-        _selectedCharacter = null;
+        ResetSelects();
     }
 
     private IEnumerator MoveSelectedCharacter()
@@ -556,8 +660,7 @@ public class GridManager : MonoBehaviour
             yield return StartCoroutine(_selectedCharacter.GetComponent<UnitMovement>().SetGridLerp(p.x, p.y, vec));
         }
 
-        isMoving = false;
-        _selectedCharacter = null;
+        ResetSelects();
     }
 
     private List<Vector3> ConvertPathToWorld (List<Vector2Int> path)

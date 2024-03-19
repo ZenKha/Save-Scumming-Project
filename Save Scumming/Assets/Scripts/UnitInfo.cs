@@ -9,7 +9,7 @@ public class UnitInfo : MonoBehaviour
     [SerializeField] private int _movementRange;
 
     [SerializeField] private int _damage;
-    [SerializeField] private int _range;
+    [SerializeField] private int _attackRange;
 
     [SerializeField] private int _maxHp;
     [SerializeField] private int _hp;
@@ -17,7 +17,7 @@ public class UnitInfo : MonoBehaviour
     public string Name => _name;
     public int MovementRange => _movementRange;
     public int Damage => _damage;
-    public int Range => _range;
+    public int AttackRange => _attackRange;
     public int MaxHp => _maxHp;
     public int Hp => _hp;
 

@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 1369402246479537449}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1, y: 0, z: -20}
+  m_LocalPosition: {x: 4.5, y: 0.51, z: 1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -59,8 +59,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e672de374252c5c4fa8f0f77c7c43db6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _gridX: 0
-  _gridY: 0
+  _gridX: 9
+  _gridY: 6
 --- !u!114 &3662585882825880607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,7 +76,7 @@ MonoBehaviour:
   _name: Archer
   _movementRange: 4
   _damage: 4
-  _range: 10
+  _attackRange: 10
   _maxHp: 20
   _hp: 20
 --- !u!1001 &904065101801670433

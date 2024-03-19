@@ -118,8 +118,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28b918b8d7d13834ba7a1d129ef64df6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isClickable: 1
+  _isClickable: 1
   _gridX: 0
   _gridY: 0
-  _highlightSquare: {fileID: 4944314850024267181, guid: 8f6612699780ea649a7ac403028f1aa9, type: 3}
   _characterInBlock: {fileID: 0}
+  _highlightSquare: {fileID: 4944314850024267181, guid: 8f6612699780ea649a7ac403028f1aa9, type: 3}
+  _highlightClose: {fileID: 2100000, guid: e9013b943421b3d47bbc2907b3dc3b0b, type: 2}
+  _highlightFar: {fileID: 2100000, guid: 714786d2c4a3fff4681b2128fc1d7ea7, type: 2}
+  _highlightAttack: {fileID: 2100000, guid: 477b7da3fd62f554097d6ad67885097b, type: 2}
+  HighlightYOffset: 0.51

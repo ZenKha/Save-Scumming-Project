@@ -69,7 +69,7 @@ public class BattleSystem : MonoBehaviour
             playerUnit.GetComponent<PlayerUnitBehaviour>().GiveTurnTokens();
         }
 
-        _gridManager.ResetTurn();
+        _gridManager.ResetSelects();
         endTurnButton.interactable = true;
     }
 
