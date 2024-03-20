@@ -77,6 +77,7 @@ MonoBehaviour:
   _movementRange: 5
   _damage: 5
   _attackRange: 1
+  _pierce: 1
   _maxHp: 30
   _hp: 30
 --- !u!1001 &6619471438540217682

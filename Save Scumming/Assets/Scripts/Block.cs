@@ -56,8 +56,8 @@ public class Block : MonoBehaviour
     [SerializeField] Material _highlightAttack;
     [SerializeField][Range(0f, 1f)] float HighlightYOffset; // 0.51f funciona por agora
     [SerializeField] private GameObject _highlightInstance;
-    private bool _highlighted;
-    public bool Highlighted => _highlighted;
+    private bool _isHighlighted;
+    public bool IsHighlighted => _isHighlighted;
     
     public void HighlightBlock(HighlightType highlightType)
     {
@@ -85,7 +85,7 @@ public class Block : MonoBehaviour
                 break;
         }
 
-        _highlighted = true;
+        _isHighlighted = true;
     }
 
     public void DestroyHighlight()
@@ -97,6 +97,6 @@ public class Block : MonoBehaviour
 
         Destroy(_highlightInstance);
         _highlightInstance = null;
-        _highlighted = false;
+        _isHighlighted = false;
     }
 }

@@ -98,6 +98,16 @@ public class BattleSystem : MonoBehaviour
         StartPlayerTurn();
     }
 
+    public void Win()
+    {
+        Debug.Log("yippie");
+    }
+
+    public void Lose()
+    {
+        Debug.Log("bwomp");
+    }
+
     public BattleState GetBattleState()
     {
         return _state;

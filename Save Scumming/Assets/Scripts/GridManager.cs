@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
 using Random = UnityEngine.Random;
@@ -45,7 +46,7 @@ public class GridManager : MonoBehaviour
 
         if (selectState == SelectState.Select)
         {
-            if (Input.GetButtonUp("Ability1"))
+            if (Input.GetButtonUp("Ability1") && _selectedCharacter.GetComponent<PlayerUnitBehaviour>().ActionToken)
             {
                 selectState = SelectState.Attack;
                 DestroyHighlight();
@@ -243,38 +244,38 @@ public class GridManager : MonoBehaviour
             {
                 if (selectState == SelectState.Select)
                 {
+                    // If the click is on the currently selected character, ignore it
                     if (startClickPos == new Vector2Int(x, y))
                     {
-                        // Second click is the same as the first, cancel movement
-                        ResetSelects();
-                        Debug.Log("Movement canceled");
-                        GetComponent<PathDrawer>().UpdatePath(null);
-                        DestroyHighlight();
+                        return;
                     }
-                    else
-                    {
-                        // Player clicked in a different character
-                        var characterInDestination = _characters.Find(c => c.GetComponent<UnitMovement>().GridX == x && c.GetComponent<UnitMovement>().GridY == y);
 
-                        if (characterInDestination != null)
+                    // Checks if clicked block already has a character in it and...
+                    Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
+                    var charInBlock = block.GetCharacterInBlock();
+
+                    // ... if it does, check type of character
+                    if (charInBlock != null)
+                    {
+                        // If it's a player character, change to that character
+                        if (charInBlock.GetComponent<PlayerUnitBehaviour>() != null)
                         {
-                            if (!characterInDestination.GetComponent<PlayerUnitBehaviour>().ActionToken)
+                            ResetSelects();
+                            Debug.Log("Movement canceled");
+
+                            // If second character has no action, then reset select
+                            // TODO: Probably change this later so even a character with no action can still be selected
+                            if (!charInBlock.GetComponent<PlayerUnitBehaviour>().ActionToken)
                             {
-                                // Second character has no action, cancel move
-                                ResetSelects();
-                                Debug.Log("Movement canceled");
-                                GetComponent<PathDrawer>().UpdatePath(null);
-                                DestroyHighlight();
                                 return;
                             }
 
                             // Change to new character
-                            _selectedCharacter = characterInDestination;
+                            _selectedCharacter = charInBlock;
                             startClickPos = new Vector2Int(x, y);
                             Debug.Log("Initial position set: " + startClickPos);
-                            DestroyHighlight();
 
-                            if (characterInDestination.GetComponent<PlayerUnitBehaviour>().MoveToken)
+                            if (charInBlock.GetComponent<PlayerUnitBehaviour>().MoveToken)
                             {
                                 // Highlight all neighbour cells in a range
                                 HighlightCharacterMovement(x, y);
@@ -282,64 +283,183 @@ public class GridManager : MonoBehaviour
 
                             return;
                         }
-
-                        // TODO: Mudar verificação de character para diferenciar entre jogador e inimigo em vez de ter dois ifs
-                        // Checks if clicked block already has a character in it
-                        // Por agora, como o if anterior verifica characters do jogador, isto acaba só por verificar inimigos
-                        Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
-
-                        if (block.GetCharacterInBlock() != null)
-                        {
-                            //if (character é aliado) {
-                            //    faz isto
-                            //}
-                            //else 
-                            //{
-                            //    outra cena
-                            //}
-                            return;
-                        }
-
-                        // Second click
-                        if (!_selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
-                        {
-                            return;
-                        }
-
-                        var pathToThisPlace = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, new(x, y));
-
-                        if (pathToThisPlace == null)
-                        {
-                            return;
-                        }
-
-                        var distance = pathToThisPlace.Count;
-
-                        // If the click is out of the character's range, cancel movement
-                        if (distance > _selectedCharacter.GetComponent<UnitInfo>().MovementRange)
-                        {
-                            ResetSelects();
-                            destinationClickPos = new Vector2Int(-1, -1);
-                            GetComponent<PathDrawer>().UpdatePath(null);
-                            DestroyHighlight();
-                            return;
-                        }
-
-                        // Second click, set the destination position
-                        destinationClickPos = new Vector2Int(x, y);
-
-                        UpdateUnitPosition(_selectedCharacter, x, y);
-                        pathAnimation = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, destinationClickPos);
-                        StartCoroutine(MoveSelectedCharacter());
-                        _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveMoveToken();
-
-                        destinationClickPos = new Vector2Int(-1, -1);
-                        GetComponent<PathDrawer>().UpdatePath(null);
-                        DestroyHighlight();
+                        
+                        //// If it's an enemy, ignore click
+                        //if (charInBlock.GetComponent<EnemyBehaviourEngine>() != null)
+                        //{
+                        //    return;
+                        //}
                     }
+
+                    // Second click
+                    if (!_selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
+                    {
+                        return;
+                    }
+
+                    var pathToThisPlace = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, new(x, y));
+
+                    if (pathToThisPlace == null)
+                    {
+                        return;
+                    }
+
+                    var distance = pathToThisPlace.Count;
+
+                    // If the click is out of the character's range, cancel movement
+                    if (distance > _selectedCharacter.GetComponent<UnitInfo>().MovementRange)
+                    {
+                        ResetSelects();
+                        destinationClickPos = new Vector2Int(-1, -1);
+                        return;
+                    }
+
+                    // Second click, set the destination position
+                    destinationClickPos = new Vector2Int(x, y);
+
+                    UpdateUnitPosition(_selectedCharacter, x, y);
+                    pathAnimation = PathFinder.CalculateShortestPath(AddPlayerToGrid(), startClickPos, destinationClickPos);
+                    StartCoroutine(MoveSelectedCharacter());
+                    _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveMoveToken();
+
+                    // Not using ResetSelects() since _selectedCharacter is still needed
+                    destinationClickPos = new Vector2Int(-1, -1);
+                    GetComponent<PathDrawer>().UpdatePath(null);
+                    DestroyHighlight();
+                }
+                else if (selectState == SelectState.Attack)
+                {
+                    // If the click is on the currently selected character, ignore it
+                    if (startClickPos == new Vector2Int(x, y))
+                    {
+                        return;
+                    }
+
+                    Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
+                    
+                    // If block is highlighted, get info for attack
+                    if (block.IsHighlighted)
+                    {
+                        var posInfo = _selectedCharacter.GetComponent<UnitMovement>();
+
+                        // There's probably an easier way of doing this
+                        // Attack up
+                        if (block.GridX < posInfo.GridX && block.GridY == posInfo.GridY)
+                        {
+                            // Grid is rotated 90º counter-clockwise
+                            Attack(Vector2Int.left);
+                        }
+                        
+                        // Attack down
+                        if (block.GridX > posInfo.GridX && block.GridY == posInfo.GridY)
+                        {
+                            Attack(Vector2Int.right);
+                        }
+
+                        // Attack left
+                        if (block.GridX == posInfo.GridX && block.GridY < posInfo.GridY)
+                        {
+                            Attack(Vector2Int.down);
+                        }
+
+                        // Attack right
+                        if (block.GridX == posInfo.GridX && block.GridY > posInfo.GridY)
+                        {
+                            Attack(Vector2Int.up);
+                        }
+                    }
+
+                    // Conclude character turn
+                    _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveActionToken();
+                    ResetSelects();
                 }
             } 
         }
+    }
+
+    private void Attack(Vector2Int direction)
+    {
+        var stats = _selectedCharacter.GetComponent<UnitInfo>();
+        var pierce = stats.Pierce;
+        Vector2Int start = _selectedCharacter.GetComponent<UnitMovement>().GetGridCoordinates();
+        Block block;
+
+        for (int i = 1; i <= stats.AttackRange; i++)
+        {
+            if (pierce <= 0)
+            {
+                return;
+            }
+
+            Vector2Int coords = start + (direction * i);
+
+            //Check if coordinates are inside limits of grid
+            if (coords.x < 0 || coords.x > rows || coords.y < 0 || coords.y > cols)
+            {
+                return;
+            }
+
+            block = _blocks.Find(b => b.GridX == coords.x && b.GridY == coords.y).GetComponent<Block>();
+            var target = block.GetCharacterInBlock();
+
+            if (target != null)
+            {
+                target.GetComponent<UnitInfo>().ModifyHp(-stats.Damage);
+                Debug.Log("Dealt " + stats.Damage + " damage to character in block (" + coords.x + "," + coords.y + ")");
+                pierce--;
+
+                if (!target.GetComponent<UnitInfo>().IsAlive)
+                {
+                    KillUnit(target);
+                }
+            }
+
+        }
+    }
+
+    private void KillUnit(GameObject unit)
+    {
+        // Player unit
+        if (unit.GetComponent<PlayerUnitBehaviour>() != null)
+        {
+            var unitMove = unit.GetComponent<UnitMovement>();
+            
+            // Remove unit from block
+            Block block = _blocks.Find(b => b.GridX == unitMove.GridX && b.GridY == unitMove.GridY).GetComponent<Block>();
+            block.SetCharacterInBlock(null);
+            
+            _characters.Remove(unit);
+            unit.SetActive(false);
+
+            if (_characters.Count == 0)
+            {
+                battleSystem.Lose();
+            }
+        }
+
+        // Enemy unit
+        if (unit.GetComponent<EnemyBehaviourEngine>() != null)
+        {
+            var unitMove = unit.GetComponent<UnitMovement>();
+
+            // Remove unit from block
+            Block block = _blocks.Find(b => b.GridX == unitMove.GridX && b.GridY == unitMove.GridY).GetComponent<Block>();
+            block.SetCharacterInBlock(null);
+
+            _enemies.Remove(unit);
+            unit.SetActive(false);
+
+            if (_enemies.Count == 0)
+            {
+                battleSystem.Win();
+            }
+        }
+    }
+
+    public void KillDebug()
+    {
+        KillUnit(_selectedCharacter);
+        ResetSelects();
     }
 
     private GameObject semi;
@@ -411,7 +531,7 @@ public class GridManager : MonoBehaviour
         block.SetCharacterInBlock(null);
         // Add character to destination block
         block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
-        block.SetCharacterInBlock(_selectedCharacter);
+        block.SetCharacterInBlock(unit);
     }
 
     public void UpdateUnitPosition(GameObject unit, Vector2Int vec)
@@ -421,7 +541,7 @@ public class GridManager : MonoBehaviour
         block.SetCharacterInBlock(null);
         // Add character to destination block
         block = _blocks.Find(b => b.GridX == vec.x && b.GridY == vec.y).GetComponent<Block>();
-        block.SetCharacterInBlock(_selectedCharacter);
+        block.SetCharacterInBlock(unit);
     }
 
     public int[,] GenerateArrayWithUnits()
@@ -463,12 +583,6 @@ public class GridManager : MonoBehaviour
     }
 
     private readonly List<Block> highlight = new();
-
-    [Space(10)] [Header("Highlight Tiles")]
-    [SerializeField] GameObject _highlightSquare;
-    [SerializeField] Material _highlightPlace;
-    [SerializeField] Material _highlightFar;
-    [SerializeField] [Range(0f, 1f)] float HighlightYOffset; // 0.51f funciona por agora
 
     private void DestroyHighlight()
     {
