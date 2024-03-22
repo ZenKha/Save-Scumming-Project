@@ -1,3 +1,4 @@
+using cakeslice;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -228,6 +229,8 @@ public class GridManager : MonoBehaviour
 
                 // Set SelectState to Select
                 selectState = SelectState.Select;
+                var mat = _selectedCharacter.transform.Find("Mesh").GetComponent<Renderer>().material;
+                mat.EnableKeyword("_EMISSION");
 
                 // If there is a character in clicked tile AND it has the move token...
                 if (_selectedCharacter.GetComponent<PlayerUnitBehaviour>().MoveToken)
@@ -575,6 +578,11 @@ public class GridManager : MonoBehaviour
 
     public void ResetSelects()
     {
+        if (_selectedCharacter != null)
+        {
+            var mat = _selectedCharacter.transform.Find("Mesh").GetComponent<Renderer>().material;
+            mat.DisableKeyword("_EMISSION");
+        }
         _selectedCharacter = null;
         GetComponent<PathDrawer>().UpdatePath(null);
         DestroyHighlight();
@@ -766,6 +774,10 @@ public class GridManager : MonoBehaviour
 
     private IEnumerator MoveSelectedCharacter()
     {
+        // Disable emission
+        var mat = _selectedCharacter.transform.Find("Mesh").GetComponent<Renderer>().material;
+        mat.DisableKeyword("_EMISSION");
+
         isMoving = true;
         foreach (var p in pathAnimation)
         {

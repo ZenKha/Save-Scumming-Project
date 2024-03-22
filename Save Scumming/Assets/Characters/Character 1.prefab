@@ -80,6 +80,7 @@ MonoBehaviour:
   _pierce: 1
   _maxHp: 30
   _hp: 30
+  _isAlive: 1
 --- !u!1001 &6619471438540217682
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -90,7 +91,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4689064184490121715, guid: ab04e73028e48b24da5d26e09a1b1bb9, type: 3}
       propertyPath: m_Name
-      value: Base Material
+      value: Mesh
       objectReference: {fileID: 0}
     - target: {fileID: 5357374412187894601, guid: ab04e73028e48b24da5d26e09a1b1bb9, type: 3}
       propertyPath: m_LocalPosition.x

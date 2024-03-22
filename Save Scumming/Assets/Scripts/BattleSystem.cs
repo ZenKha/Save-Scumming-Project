@@ -8,17 +8,23 @@ public enum BattleState { START, PLACE, PLAYERTURN, ENEMYTURN, WON, LOST}
 
 public class BattleSystem : MonoBehaviour
 {
-    [SerializeField] private BattleState _state;
-    [SerializeField] private GridManager _gridManager;
+    [SerializeField] BattleState _state;
+    [SerializeField] GridManager _gridManager;
 
     [Space(10)] [Header("Characters")]
     [SerializeField] List<GameObject> _characters;
     [SerializeField] List<GameObject> _enemies;
 
-    [Space(10)] [Header("UI")]
-    public TMP_Text startText;
-    public TMP_Text turnText;
-    public Button endTurnButton;
+    [Space(10)]
+    [Header("UI")]
+    [SerializeField] TMP_Text startText;
+    [Space(5)]
+    [SerializeField] GameObject turnUI;
+    [SerializeField] TMP_Text turnText;
+    [SerializeField] Button endTurnButton;
+    [Space(5)]
+    [SerializeField] GameObject endScreenUI;
+    [SerializeField] TMP_Text endText;
 
 
     void Start()
@@ -53,8 +59,7 @@ public class BattleSystem : MonoBehaviour
     public void StartPlaceState()
     {
         _state = BattleState.PLACE;
-        endTurnButton.gameObject.SetActive(true);
-        turnText.text = "Placement Phase";
+        turnUI.SetActive(true);
         _gridManager.AddCharacters(_characters);
     }
 
@@ -62,7 +67,7 @@ public class BattleSystem : MonoBehaviour
     {
         _state = BattleState.PLAYERTURN;
         turnText.text = "Player Turn";
-        
+
         // Give action token to player units
         foreach (GameObject playerUnit in _gridManager.Characters)
         {
@@ -100,12 +105,16 @@ public class BattleSystem : MonoBehaviour
 
     public void Win()
     {
-        Debug.Log("yippie");
+        turnUI.SetActive(false);
+        endScreenUI.SetActive(true);
+        endText.text = "You Win!";
     }
 
     public void Lose()
     {
-        Debug.Log("bwomp");
+        turnUI.SetActive(false);
+        endScreenUI.SetActive(true);
+        endText.text = "You Lose...";
     }
 
     public BattleState GetBattleState()
@@ -117,7 +126,7 @@ public class BattleSystem : MonoBehaviour
     {
         startText.text = message;
         startText.enabled = true;
-        yield return new WaitForSeconds(.5f);
+        yield return new WaitForSeconds(1.5f);
         startText.enabled = false;
     }
 }
