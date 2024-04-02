@@ -1,4 +1,3 @@
-using cakeslice;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -51,6 +50,7 @@ public class GridManager : MonoBehaviour
             {
                 selectState = SelectState.Attack;
                 DestroyHighlight();
+                GetComponent<PathDrawer>().UpdatePath(null);
                 HighlightCharacterAttack();
             }
         }
@@ -266,15 +266,13 @@ public class GridManager : MonoBehaviour
                             ResetSelects();
                             Debug.Log("Movement canceled");
 
-                            // If second character has no action, then reset select
-                            // TODO: Probably change this later so even a character with no action can still be selected
-                            if (!charInBlock.GetComponent<PlayerUnitBehaviour>().ActionToken)
-                            {
-                                return;
-                            }
-
                             // Change to new character
+                            selectState = SelectState.Select;
                             _selectedCharacter = charInBlock;
+
+                            var mat = _selectedCharacter.transform.Find("Mesh").GetComponent<Renderer>().material;
+                            mat.EnableKeyword("_EMISSION");
+
                             startClickPos = new Vector2Int(x, y);
                             Debug.Log("Initial position set: " + startClickPos);
 
@@ -286,12 +284,6 @@ public class GridManager : MonoBehaviour
 
                             return;
                         }
-                        
-                        //// If it's an enemy, ignore click
-                        //if (charInBlock.GetComponent<EnemyBehaviourEngine>() != null)
-                        //{
-                        //    return;
-                        //}
                     }
 
                     // Second click
@@ -384,6 +376,7 @@ public class GridManager : MonoBehaviour
     {
         var stats = _selectedCharacter.GetComponent<UnitInfo>();
         var pierce = stats.Pierce;
+        var acc = stats.Accuracy;
         Vector2Int start = _selectedCharacter.GetComponent<UnitMovement>().GetGridCoordinates();
         Block block;
 
@@ -397,26 +390,44 @@ public class GridManager : MonoBehaviour
             Vector2Int coords = start + (direction * i);
 
             //Check if coordinates are inside limits of grid
-            if (coords.x < 0 || coords.x > rows || coords.y < 0 || coords.y > cols)
+            if (coords.x <= 0 || coords.x >= rows || coords.y <= 0 || coords.y >= cols)
             {
                 return;
             }
 
             block = _blocks.Find(b => b.GridX == coords.x && b.GridY == coords.y).GetComponent<Block>();
+
+            // Not clickable means its cover
+            if (!block.IsClickable)
+            {
+                pierce--;
+                acc -= 20;
+            }
+
             var target = block.GetCharacterInBlock();
 
             if (target != null)
             {
-                target.GetComponent<UnitInfo>().ModifyHp(-stats.Damage);
-                Debug.Log("Dealt " + stats.Damage + " damage to character in block (" + coords.x + "," + coords.y + ")");
-                pierce--;
-
-                if (!target.GetComponent<UnitInfo>().IsAlive)
+                // Attack lands
+                if (Random.Range(0, 100) < acc)
                 {
-                    KillUnit(target);
+                    int dmgFluct = Random.Range(-1, 1);
+                    target.GetComponent<UnitInfo>().ModifyHp(-(stats.Damage + dmgFluct));
+                    Debug.Log("Dealt " + stats.Damage + " damage to character in block (" + coords.x + "," + coords.y + ") with " + acc + "% accuracy");
+                    pierce--;
+
+                    if (!target.GetComponent<UnitInfo>().IsAlive)
+                    {
+                        KillUnit(target);
+                    }
+                } 
+                else
+                {
+                    Debug.Log("Attack missed to character in block (" + coords.x + "," + coords.y + ") with " + acc + "% accuracy");
                 }
             }
 
+            acc -= 10;
         }
     }
 

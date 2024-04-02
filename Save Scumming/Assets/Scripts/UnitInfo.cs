@@ -11,6 +11,7 @@ public class UnitInfo : MonoBehaviour
     [SerializeField] private int _damage;
     [SerializeField] private int _attackRange;
     [SerializeField] private int _pierce;
+    [SerializeField] [Range(0, 100)] private int _accuracy;
 
     [SerializeField] private int _maxHp;
     [SerializeField] private int _hp;
@@ -21,6 +22,7 @@ public class UnitInfo : MonoBehaviour
     public int Damage => _damage;
     public int AttackRange => _attackRange;
     public int Pierce => _pierce;
+    public int Accuracy => _accuracy;
     public int MaxHp => _maxHp;
     public int Hp => _hp;
     public bool IsAlive => _isAlive;

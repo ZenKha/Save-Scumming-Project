@@ -78,6 +78,7 @@ MonoBehaviour:
   _damage: 8
   _attackRange: 5
   _pierce: 2
+  _accuracy: 85
   _maxHp: 15
   _hp: 15
   _isAlive: 1

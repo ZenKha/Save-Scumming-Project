@@ -19,6 +19,7 @@ public class PlayerUnitBehaviour : MonoBehaviour
     public void RemoveActionToken()
     {
         _actionToken = false;
+        _moveToken = false;
     }
 
     public void RemoveMoveToken()
