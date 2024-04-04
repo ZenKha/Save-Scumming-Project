@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class PlayerUnitBehaviour : MonoBehaviour
 {
-    private bool _actionToken = false;
-    private bool _moveToken = false;
+    public bool _actionToken = false;
+    public bool _moveToken = false;
 
     public bool MoveToken => _moveToken;
     public bool ActionToken => _actionToken;

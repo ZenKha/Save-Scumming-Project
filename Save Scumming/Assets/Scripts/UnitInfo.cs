@@ -11,10 +11,14 @@ public class UnitInfo : MonoBehaviour
     [SerializeField] private int _damage;
     [SerializeField] private int _attackRange;
     [SerializeField] private int _pierce;
-    [SerializeField] [Range(0, 100)] private int _accuracy;
+    [Range(0, 100)]
+    [SerializeField] private int _accuracy;
+    [SerializeField] private int _healPower;
 
     [SerializeField] private int _maxHp;
     [SerializeField] private int _hp;
+
+    [SerializeField] private bool _isBlocking = false;
     [SerializeField] private bool _isAlive = true;
 
     public string Name => _name;
@@ -23,8 +27,10 @@ public class UnitInfo : MonoBehaviour
     public int AttackRange => _attackRange;
     public int Pierce => _pierce;
     public int Accuracy => _accuracy;
+    public int HealPower => _healPower;
     public int MaxHp => _maxHp;
     public int Hp => _hp;
+    public bool IsBlocking => _isBlocking;
     public bool IsAlive => _isAlive;
 
     /// <summary>
@@ -94,4 +100,9 @@ public class UnitInfo : MonoBehaviour
 
         if (_hp == 0) _isAlive = false;
     }
+
+    public void SetBlockingState (bool value)
+    {
+        _isBlocking = value;
+    } 
 }

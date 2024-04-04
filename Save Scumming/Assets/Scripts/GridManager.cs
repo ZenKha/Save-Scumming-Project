@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
+using static UnityEngine.UI.CanvasScaler;
 using Random = UnityEngine.Random;
 
 public enum SelectState { None, Select, Attack, Block, Rest }
@@ -53,12 +54,38 @@ public class GridManager : MonoBehaviour
                 GetComponent<PathDrawer>().UpdatePath(null);
                 HighlightCharacterAttack();
             }
+
+            if (Input.GetButtonUp("Ability2") && _selectedCharacter.GetComponent<PlayerUnitBehaviour>().ActionToken)
+            {
+                selectState = SelectState.Block;
+                DestroyHighlight();
+                GetComponent<PathDrawer>().UpdatePath(null);
+                HighlightCharacterSelfTarget();
+            }
+
+            if (Input.GetButtonUp("Ability3") && _selectedCharacter.GetComponent<PlayerUnitBehaviour>().ActionToken)
+            {
+                selectState = SelectState.Rest;
+                DestroyHighlight();
+                GetComponent<PathDrawer>().UpdatePath(null);
+                HighlightCharacterSelfTarget();
+            }
         }
 
         // Right click, cancel all selections
         if (Input.GetMouseButtonUp(1))
         {
-            ResetSelects();
+            // If in attack, block or rest state, revert to move select with the same character
+            if (selectState == SelectState.Attack || selectState == SelectState.Block || selectState == SelectState.Rest)
+            {
+                Vector2Int coords = _selectedCharacter.GetComponent<UnitMovement>().GetGridCoordinates();
+                ResetSelects();
+                MapClick(coords.x, coords.y);
+            }
+            else // else, just reset selects
+            {
+                ResetSelects();
+            }
         }
     }
 
@@ -322,7 +349,8 @@ public class GridManager : MonoBehaviour
                     GetComponent<PathDrawer>().UpdatePath(null);
                     DestroyHighlight();
                 }
-                else if (selectState == SelectState.Attack)
+                
+                if (selectState == SelectState.Attack)
                 {
                     // If the click is on the currently selected character, ignore it
                     if (startClickPos == new Vector2Int(x, y))
@@ -368,6 +396,42 @@ public class GridManager : MonoBehaviour
                     _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveActionToken();
                     ResetSelects();
                 }
+                
+                if (selectState == SelectState.Block)
+                {
+                    Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
+                    var charInBlock = block.GetCharacterInBlock();
+
+                    // If the click is on the currently selected character, activate block
+                    if (startClickPos == new Vector2Int(x, y))
+                    {
+                        charInBlock.GetComponent<UnitInfo>().SetBlockingState(true);
+
+                        // Conclude character turn
+                        _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveActionToken();
+                        ResetSelects();
+
+                        return;
+                    }
+                }
+                
+                if (selectState == SelectState.Rest)
+                {
+                    Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
+                    var charInBlock = block.GetCharacterInBlock();
+
+                    // If the click is on the currently selected character, activate block
+                    if (startClickPos == new Vector2Int(x, y))
+                    {
+                        charInBlock.GetComponent<UnitInfo>().ModifyHp(charInBlock.GetComponent<UnitInfo>().HealPower);
+
+                        // Conclude character turn
+                        _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveActionToken();
+                        ResetSelects();
+
+                        return;
+                    }
+                }
             } 
         }
     }
@@ -390,7 +454,7 @@ public class GridManager : MonoBehaviour
             Vector2Int coords = start + (direction * i);
 
             //Check if coordinates are inside limits of grid
-            if (coords.x <= 0 || coords.x >= rows || coords.y <= 0 || coords.y >= cols)
+            if (coords.x < 0 || coords.x > rows-1 || coords.y < 0 || coords.y > cols-1)
             {
                 return;
             }
@@ -412,8 +476,9 @@ public class GridManager : MonoBehaviour
                 if (Random.Range(0, 100) < acc)
                 {
                     int dmgFluct = Random.Range(-1, 1);
-                    target.GetComponent<UnitInfo>().ModifyHp(-(stats.Damage + dmgFluct));
-                    Debug.Log("Dealt " + stats.Damage + " damage to character in block (" + coords.x + "," + coords.y + ") with " + acc + "% accuracy");
+                    int damage = target.GetComponent<UnitInfo>().IsBlocking ? Mathf.FloorToInt((stats.Damage + dmgFluct)/2) : stats.Damage + dmgFluct;
+                    target.GetComponent<UnitInfo>().ModifyHp(-damage);
+                    Debug.Log("Dealt " + damage + " damage to character in block (" + coords.x + "," + coords.y + ") with " + acc + "% accuracy");
                     pierce--;
 
                     if (!target.GetComponent<UnitInfo>().IsAlive)
@@ -739,6 +804,14 @@ public class GridManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void HighlightCharacterSelfTarget()
+    {
+        UnitMovement unitMovement = _selectedCharacter.GetComponent<UnitMovement>();
+        Block block = _blocks.Find(b => b.GridX == unitMovement.GridX && b.GridY == unitMovement.GridY).GetComponent<Block>();
+        block.HighlightBlock(HighlightType.Far); 
+        highlight.Add(block);
     }
 
     private int[,] AddPlayerToGrid()

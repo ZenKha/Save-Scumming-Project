@@ -80,6 +80,7 @@ public class BattleSystem : MonoBehaviour
 
     public void EndTurn()
     {
+        _gridManager.ResetSelects();
         StartCoroutine(StartEnemyTurn());
         endTurnButton.interactable = false;
     }

@@ -47,6 +47,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02ba93e0e79108c438a8f194c43367ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _actionToken: 0
+  _moveToken: 0
 --- !u!114 &3303263593243940226
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79,8 +81,10 @@ MonoBehaviour:
   _attackRange: 10
   _pierce: 1
   _accuracy: 95
+  _healPower: 2
   _maxHp: 20
   _hp: 20
+  _isBlocking: 0
   _isAlive: 1
 --- !u!1001 &904065101801670433
 PrefabInstance:
