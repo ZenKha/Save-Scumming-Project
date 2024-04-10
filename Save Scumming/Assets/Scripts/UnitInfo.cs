@@ -21,6 +21,8 @@ public class UnitInfo : MonoBehaviour
     [SerializeField] private bool _isBlocking = false;
     [SerializeField] private bool _isAlive = true;
 
+    [SerializeField] private Healthbar _healthbar;
+
     public string Name => _name;
     public int MovementRange => _movementRange;
     public int Damage => _damage;
@@ -97,6 +99,8 @@ public class UnitInfo : MonoBehaviour
         if (_hp < 0) _hp = 0;
         if (_maxHp > 99) _maxHp = 99;
         if (_maxHp < 0) _maxHp = 1;
+
+        _healthbar.UpdateHealthBar(_maxHp, _hp);
 
         if (_hp == 0) _isAlive = false;
     }

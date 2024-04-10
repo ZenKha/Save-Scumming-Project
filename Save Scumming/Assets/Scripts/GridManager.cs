@@ -1,17 +1,30 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+using TMPro;
 using UnityEngine;
-using UnityEngine.TextCore.Text;
-using static UnityEngine.UI.CanvasScaler;
 using Random = UnityEngine.Random;
 
 public enum SelectState { None, Select, Attack, Block, Rest }
 
 public class GridManager : MonoBehaviour
 {
+    public static GridManager instance;
+
+    void Awake()
+    {
+        if (instance == null) 
+        { 
+            instance = this; 
+        }
+    }
+
     [SerializeField] private BattleSystem battleSystem;
+
+    [Space(10)]
+    [Header("UI")]
+    [SerializeField] TMP_Text _actionText;
+
     [Space(10)]
     [SerializeField] private GameObject[] prefabs; // Array of prefabs to instantiate
     [SerializeField]
@@ -50,6 +63,7 @@ public class GridManager : MonoBehaviour
             if (Input.GetButtonUp("Ability1") && _selectedCharacter.GetComponent<PlayerUnitBehaviour>().ActionToken)
             {
                 selectState = SelectState.Attack;
+                _actionText.text = "Attack";
                 DestroyHighlight();
                 GetComponent<PathDrawer>().UpdatePath(null);
                 HighlightCharacterAttack();
@@ -58,6 +72,7 @@ public class GridManager : MonoBehaviour
             if (Input.GetButtonUp("Ability2") && _selectedCharacter.GetComponent<PlayerUnitBehaviour>().ActionToken)
             {
                 selectState = SelectState.Block;
+                _actionText.text = "Block";
                 DestroyHighlight();
                 GetComponent<PathDrawer>().UpdatePath(null);
                 HighlightCharacterSelfTarget();
@@ -66,6 +81,7 @@ public class GridManager : MonoBehaviour
             if (Input.GetButtonUp("Ability3") && _selectedCharacter.GetComponent<PlayerUnitBehaviour>().ActionToken)
             {
                 selectState = SelectState.Rest;
+                _actionText.text = "Rest";
                 DestroyHighlight();
                 GetComponent<PathDrawer>().UpdatePath(null);
                 HighlightCharacterSelfTarget();
@@ -545,6 +561,12 @@ public class GridManager : MonoBehaviour
 
     public void MapHover(int x, int y)
     {
+        if (x == -1 && y == -1)
+        {
+            GetComponent<PathDrawer>().UpdatePath(null);
+            return;
+        }
+
         if (battleSystem.GetBattleState() == BattleState.PLACE)
         {
             // TODO: Mudar sistema de highlights para ser linked ao bloco
@@ -664,6 +686,7 @@ public class GridManager : MonoBehaviour
         DestroyHighlight();
         isMoving = false;
         selectState = SelectState.None;
+        _actionText.text = "";
     }
 
     private readonly List<Block> highlight = new();
