@@ -2,6 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
+using Unity.VisualScripting;
+using Unity.VisualScripting.Dependencies.NCalc;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -563,14 +566,20 @@ public class GridManager : MonoBehaviour
     {
         if (x == -1 && y == -1)
         {
+            if (selectState == SelectState.Attack)
+            {
+                DestroyHighlight();
+                HighlightCharacterAttack();
+            }
+
             GetComponent<PathDrawer>().UpdatePath(null);
             return;
         }
 
         if (battleSystem.GetBattleState() == BattleState.PLACE)
         {
-            // TODO: Mudar sistema de highlights para ser linked ao bloco
-            if (x < 7) return;
+            Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
+            if (!block.IsHighlighted) return;
 
             Destroy(semi);
             Vector3 vec = GridToWorldPosition(new(x, y));
@@ -622,6 +631,64 @@ public class GridManager : MonoBehaviour
                 path.Insert(0, startClickPos);
                 GetComponent<PathDrawer>().UpdatePath(ConvertPathToWorld(path)); 
             }
+
+            if (selectState == SelectState.Attack)
+            {
+                Block block = _blocks.Find(b => b.GridX == x && b.GridY == y).GetComponent<Block>();
+
+                // If block is highlighted, get info for attack
+                if (block.IsHighlighted)
+                {
+                    var posInfo = _selectedCharacter.GetComponent<UnitMovement>();
+
+                    // There's probably an easier way of doing this
+                    // Attack up
+                    if (block.GridX < posInfo.GridX && block.GridY == posInfo.GridY)
+                    {
+                        // Grid is rotated 90º counter-clockwise
+                        HighlightHoverAttack(Vector2Int.left);
+                    }
+
+                    // Attack down
+                    if (block.GridX > posInfo.GridX && block.GridY == posInfo.GridY)
+                    {
+                        HighlightHoverAttack(Vector2Int.right);
+                    }
+
+                    // Attack left
+                    if (block.GridX == posInfo.GridX && block.GridY < posInfo.GridY)
+                    {
+                        HighlightHoverAttack(Vector2Int.down);
+                    }
+
+                    // Attack right
+                    if (block.GridX == posInfo.GridX && block.GridY > posInfo.GridY)
+                    {
+                        HighlightHoverAttack(Vector2Int.up);
+                    }
+                }
+            }
+        }
+    }
+
+    private void HighlightHoverAttack(Vector2Int direction)
+    {
+        var stats = _selectedCharacter.GetComponent<UnitInfo>();
+        Vector2Int start = _selectedCharacter.GetComponent<UnitMovement>().GetGridCoordinates();
+        Block block;
+
+        for (int i = 1; i <= stats.AttackRange; i++)
+        {
+            Vector2Int coords = start + (direction * i);
+
+            //Check if coordinates are inside limits of grid
+            if (coords.x < 0 || coords.x > rows - 1 || coords.y < 0 || coords.y > cols - 1)
+            {
+                return;
+            }
+
+            block = _blocks.Find(b => b.GridX == coords.x && b.GridY == coords.y).GetComponent<Block>();
+            block.HighlightBlock(HighlightType.AttackHover);
         }
     }
 
@@ -655,14 +722,19 @@ public class GridManager : MonoBehaviour
         {
             for (int j = 0; j < columns; j++)
             {
-                // TODO: Mudar quando distinção entre inimigos e jogadores for feita para não haver dois ifs
-                if (_characters.Find(c => c.GetComponent<UnitMovement>().GridX == i && c.GetComponent<UnitMovement>().GridY == j) != null)
+                Block block = _blocks.Find(b => b.GridX == i && b.GridY == j).GetComponent<Block>();
+                var unit = block.GetCharacterInBlock();
+
+                if (unit != null)
                 {
-                    newArray[i, j] = 2;
-                }
-                else if (_enemies.Find(c => c.GetComponent<UnitMovement>().GridX == i && c.GetComponent<UnitMovement>().GridY == j) != null)
-                {
-                    newArray[i, j] = 3;
+                    if (unit.GetComponent<PlayerUnitBehaviour>() != null)
+                    {
+                        newArray[i, j] = 2;
+                    }
+                    else if (unit.GetComponent<EnemyBehaviourEngine>() != null)
+                    {
+                        newArray[i, j] = 3;
+                    }
                 }
                 else
                 {

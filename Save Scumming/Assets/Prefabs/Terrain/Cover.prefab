@@ -232,4 +232,6 @@ MonoBehaviour:
   _highlightClose: {fileID: 2100000, guid: e9013b943421b3d47bbc2907b3dc3b0b, type: 2}
   _highlightFar: {fileID: 2100000, guid: 714786d2c4a3fff4681b2128fc1d7ea7, type: 2}
   _highlightAttack: {fileID: 2100000, guid: 477b7da3fd62f554097d6ad67885097b, type: 2}
+  _highlightAttackHover: {fileID: 2100000, guid: 1ceea30e7b633a041ade98a590f06d29, type: 2}
   HighlightYOffset: 0
+  _highlightInstance: {fileID: 0}

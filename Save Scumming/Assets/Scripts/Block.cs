@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum HighlightType { Close, Far, Attack}
+public enum HighlightType { Close, Far, Attack, AttackHover}
 
 public class Block : MonoBehaviour
 {
@@ -69,6 +69,7 @@ public class Block : MonoBehaviour
     [SerializeField] Material _highlightClose;
     [SerializeField] Material _highlightFar;
     [SerializeField] Material _highlightAttack;
+    [SerializeField] Material _highlightAttackHover;
     [SerializeField][Range(0f, 1f)] float HighlightYOffset; // 0.51f funciona por agora
     [SerializeField] private GameObject _highlightInstance;
     private bool _isHighlighted;
@@ -97,6 +98,9 @@ public class Block : MonoBehaviour
                 break;
             case HighlightType.Attack:
                 _highlightInstance.GetComponent<MeshRenderer>().material = _highlightAttack;
+                break;
+            case HighlightType.AttackHover:
+                _highlightInstance.GetComponent<MeshRenderer>().material = _highlightAttackHover;
                 break;
         }
 
