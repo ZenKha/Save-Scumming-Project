@@ -22,7 +22,7 @@ public class UnitMovement : MonoBehaviour
         transform.position = worldPosition;
     }
 
-    private readonly float PerTileMoveTime = 0.20f;
+    private readonly float PerTileMoveTime = 0.10f;
 
     public IEnumerator SetGridLerp(int x, int y, Vector3 worldPosition)
     {

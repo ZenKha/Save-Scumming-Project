@@ -24,12 +24,14 @@ public class GridManager : MonoBehaviour
 
     [SerializeField] private BattleSystem battleSystem;
 
-    [Space(10)]
+    [Space(5)]
     [Header("UI")]
     [SerializeField] TMP_Text _actionText;
 
-    [Space(10)]
+    [Space(5)]
+    [Header("Prefabs")]
     [SerializeField] private GameObject[] prefabs; // Array of prefabs to instantiate
+    [SerializeField] private GameObject floatingText;
     [SerializeField]
     private int[,] grid = new int[10, 10] // Bidimensional array representing the grid
     {
@@ -176,7 +178,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    [Space(10)] [Header("Character")]
+    [Space(5)] [Header("Character")]
     [SerializeField] List<GameObject> _characters;
     [SerializeField] List<GameObject> _enemies;
     [SerializeField] GameObject semiTransparentCharacter;
@@ -561,6 +563,7 @@ public class GridManager : MonoBehaviour
     }
 
     private GameObject semi;
+    private List<GameObject> _highlightedUnits = new List<GameObject>();
 
     public void MapHover(int x, int y)
     {
@@ -569,6 +572,7 @@ public class GridManager : MonoBehaviour
             if (selectState == SelectState.Attack)
             {
                 DestroyHighlight();
+                RemoveHighlightAttackHover();
                 HighlightCharacterAttack();
             }
 
@@ -646,34 +650,35 @@ public class GridManager : MonoBehaviour
                     if (block.GridX < posInfo.GridX && block.GridY == posInfo.GridY)
                     {
                         // Grid is rotated 90º counter-clockwise
-                        HighlightHoverAttack(Vector2Int.left);
+                        HighlightAttackHover(Vector2Int.left);
                     }
 
                     // Attack down
                     if (block.GridX > posInfo.GridX && block.GridY == posInfo.GridY)
                     {
-                        HighlightHoverAttack(Vector2Int.right);
+                        HighlightAttackHover(Vector2Int.right);
                     }
 
                     // Attack left
                     if (block.GridX == posInfo.GridX && block.GridY < posInfo.GridY)
                     {
-                        HighlightHoverAttack(Vector2Int.down);
+                        HighlightAttackHover(Vector2Int.down);
                     }
 
                     // Attack right
                     if (block.GridX == posInfo.GridX && block.GridY > posInfo.GridY)
                     {
-                        HighlightHoverAttack(Vector2Int.up);
+                        HighlightAttackHover(Vector2Int.up);
                     }
                 }
             }
         }
     }
 
-    private void HighlightHoverAttack(Vector2Int direction)
+    private void HighlightAttackHover(Vector2Int direction)
     {
         var stats = _selectedCharacter.GetComponent<UnitInfo>();
+        int acc = stats.Accuracy;
         Vector2Int start = _selectedCharacter.GetComponent<UnitMovement>().GetGridCoordinates();
         Block block;
 
@@ -689,7 +694,31 @@ public class GridManager : MonoBehaviour
 
             block = _blocks.Find(b => b.GridX == coords.x && b.GridY == coords.y).GetComponent<Block>();
             block.HighlightBlock(HighlightType.AttackHover);
+
+            if (!block.IsClickable)
+            {
+                acc -= 20;
+            }
+
+            var unit = block.GetCharacterInBlock();
+
+            if (unit != null)
+            {
+                unit.GetComponent<UnitHud>().ShowUnitHud(acc);
+                _highlightedUnits.Add(unit);
+            }
+
+            acc -= 10;
         }
+    }
+
+    private void RemoveHighlightAttackHover()
+    {
+        foreach (GameObject unit in _highlightedUnits)
+        {
+            unit.GetComponent<UnitHud>().HideUnitHud();
+        }
+        _highlightedUnits.Clear();
     }
 
     public void UpdateUnitPosition(GameObject unit, int x, int y)
@@ -756,6 +785,7 @@ public class GridManager : MonoBehaviour
         _selectedCharacter = null;
         GetComponent<PathDrawer>().UpdatePath(null);
         DestroyHighlight();
+        RemoveHighlightAttackHover();
         isMoving = false;
         selectState = SelectState.None;
         _actionText.text = "";
@@ -840,7 +870,7 @@ public class GridManager : MonoBehaviour
             {
                 block = _blocks.Find(b => b.GridX == unitMovement.GridX - i && b.GridY == unitMovement.GridY);
 
-                if (block != null && block.IsClickable)
+                if (block != null)
                 {
                     block.HighlightBlock(HighlightType.Attack);
                     highlight.Add(block);
@@ -855,7 +885,7 @@ public class GridManager : MonoBehaviour
             {
                 block = _blocks.Find(b => b.GridX == unitMovement.GridX + i && b.GridY == unitMovement.GridY);
 
-                if (block != null && block.IsClickable)
+                if (block != null)
                 {
                     block.HighlightBlock(HighlightType.Attack);
                     highlight.Add(block);
@@ -864,16 +894,13 @@ public class GridManager : MonoBehaviour
                 {
                     down = false;
                 }
-            } 
-        }
+            }
 
-        for (int i = 1; i <= range; i++)
-        {
             if (right)
             {
                 block = _blocks.Find(b => b.GridX == unitMovement.GridX && b.GridY == unitMovement.GridY + i);
 
-                if (block != null && block.IsClickable)
+                if (block != null)
                 {
                     block.HighlightBlock(HighlightType.Attack);
                     highlight.Add(block);
@@ -888,7 +915,7 @@ public class GridManager : MonoBehaviour
             {
                 block = _blocks.Find(b => b.GridX == unitMovement.GridX && b.GridY == unitMovement.GridY - i);
 
-                if (block != null && block.IsClickable)
+                if (block != null)
                 {
                     block.HighlightBlock(HighlightType.Attack);
                     highlight.Add(block);

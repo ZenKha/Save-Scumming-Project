@@ -28,29 +28,19 @@ public class Block : MonoBehaviour
     private void OnMouseUp()
     {
         if (!_isClickable) return;
-        GetComponentInParent<GridManager>().MapClick(_gridX, _gridY);
+        GridManager.instance.MapClick(_gridX, _gridY);
     }
 
     private void OnMouseEnter()
     {
         if (!_isClickable) return;
-        GetComponentInParent<GridManager>().MapHover(_gridX, _gridY);
-
-       if (_characterInBlock != null)
-       {
-            _characterInBlock.GetComponentInChildren<Healthbar>().ShowHealthbar(true);
-       }
+        GridManager.instance.MapHover(_gridX, _gridY);
     }
 
     private void OnMouseExit()
     {
         if (!_isClickable) return;
-        GetComponentInParent<GridManager>().MapHover(-1, -1);
-
-        if (_characterInBlock != null)
-        {
-            _characterInBlock.GetComponentInChildren<Healthbar>().ShowHealthbar(false);
-        }
+        GridManager.instance.MapHover(-1, -1);
     }
 
     public GameObject GetCharacterInBlock()
