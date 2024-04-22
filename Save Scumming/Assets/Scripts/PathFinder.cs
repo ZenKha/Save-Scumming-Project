@@ -19,6 +19,11 @@ public static class PathFinder
 
     public static List<Vector2Int> CalculateShortestPath(int[,] grid, Vector2Int start, Vector2Int destination)
     {
+        return CalculateShortestPath(grid, start, destination, false);
+    }
+
+    public static List<Vector2Int> CalculateShortestPath(int[,] grid, Vector2Int start, Vector2Int destination, bool includeCharacters)
+    {
         // Check if the start and destination positions are valid within the grid
         int rows = grid.GetLength(0);
         int cols = grid.GetLength(1);
@@ -61,20 +66,40 @@ public static class PathFinder
                 Vector2Int neighborPosition = currentPosition + direction;
 
                 // Check if the neighboring position is within the grid boundaries and not visited
-                if (neighborPosition.x >= 0 && neighborPosition.x < rows &&
-                    neighborPosition.y >= 0 && neighborPosition.y < cols &&
-                    !visited[neighborPosition.x, neighborPosition.y] &&
-                    grid[neighborPosition.x, neighborPosition.y] == 0)
+                if (includeCharacters)
                 {
-                    visited[neighborPosition.x, neighborPosition.y] = true;
-                    queue.Enqueue(neighborPosition);
-                    parentMap[neighborPosition] = currentPosition;
+                    if (neighborPosition.x >= 0 && neighborPosition.x < rows &&
+                        neighborPosition.y >= 0 && neighborPosition.y < cols &&
+                        !visited[neighborPosition.x, neighborPosition.y] &&
+                        (grid[neighborPosition.x, neighborPosition.y] == 0 || 
+                         grid[neighborPosition.x, neighborPosition.y] == 2 ||
+                         grid[neighborPosition.x, neighborPosition.y] == 3))
+                    {
+
+                        visited[neighborPosition.x, neighborPosition.y] = true;
+                        queue.Enqueue(neighborPosition);
+                        parentMap[neighborPosition] = currentPosition;
+                    }
                 }
+                else
+                {
+                    if (neighborPosition.x >= 0 && neighborPosition.x < rows &&
+                        neighborPosition.y >= 0 && neighborPosition.y < cols &&
+                        !visited[neighborPosition.x, neighborPosition.y] &&
+                        grid[neighborPosition.x, neighborPosition.y] == 0)
+                    {
+
+                        visited[neighborPosition.x, neighborPosition.y] = true;
+                        queue.Enqueue(neighborPosition);
+                        parentMap[neighborPosition] = currentPosition;
+                    }
+                }
+                
             }
         }
 
         // Reconstruct the shortest path using the parentMap
-        List<Vector2Int> shortestPath = new List<Vector2Int>();
+        List<Vector2Int> shortestPath = new();
         Vector2Int currentPos = destination;
 
         while (currentPos != start)

@@ -9,7 +9,6 @@ public enum BattleState { START, PLACE, PLAYERTURN, ENEMYTURN, WON, LOST}
 public class BattleSystem : MonoBehaviour
 {
     [SerializeField] BattleState _state;
-    [SerializeField] GridManager _gridManager;
 
     [Space(10)] [Header("Characters")]
     [SerializeField] List<GameObject> _characters;
@@ -35,7 +34,7 @@ public class BattleSystem : MonoBehaviour
 
     IEnumerator StartBattle()
     {
-        yield return StartCoroutine(_gridManager.CreateMap());
+        yield return StartCoroutine(GridManager.instance.CreateMap());
 
         //Place Enemies on the board
         PlaceEnemies(_enemies);
@@ -44,7 +43,7 @@ public class BattleSystem : MonoBehaviour
         yield return StartCoroutine(ShowText("Start"));
 
         //Highlight start area
-        _gridManager.HighlightStartArea();
+        GridManager.instance.HighlightStartArea();
         StartPlaceState();
     }
 
@@ -52,7 +51,7 @@ public class BattleSystem : MonoBehaviour
     {
         foreach (GameObject enemy in enemies)
         {
-            _gridManager.PlaceEnemyCharacter(enemy);
+            GridManager.instance.PlaceEnemyCharacter(enemy);
         }
     }
 
@@ -60,7 +59,7 @@ public class BattleSystem : MonoBehaviour
     {
         _state = BattleState.PLACE;
         turnUI.SetActive(true);
-        _gridManager.AddCharacters(_characters);
+        GridManager.instance.AddCharacters(_characters);
     }
 
     public void StartPlayerTurn()
@@ -69,18 +68,18 @@ public class BattleSystem : MonoBehaviour
         turnText.text = "Player Turn";
 
         // Give action token to player units
-        foreach (GameObject playerUnit in _gridManager.Characters)
+        foreach (GameObject playerUnit in GridManager.instance.Characters)
         {
             playerUnit.GetComponent<PlayerUnitBehaviour>().GiveTurnTokens();
         }
 
-        _gridManager.ResetSelects();
+        GridManager.instance.ResetSelects();
         endTurnButton.interactable = true;
     }
 
     public void EndTurn()
     {
-        _gridManager.ResetSelects();
+        GridManager.instance.ResetSelects();
         StartCoroutine(StartEnemyTurn());
         endTurnButton.interactable = false;
     }
@@ -91,14 +90,42 @@ public class BattleSystem : MonoBehaviour
         turnText.text = "Enemy Turn";
 
         // Enemies do stuff
-        foreach (GameObject enemy in _gridManager.Enemies)
+        foreach (GameObject enemy in GridManager.instance.Enemies)
         {
-            var map = _gridManager.GenerateArrayWithUnits();
+            // Remove blocking state in case it was used last turn
+            enemy.GetComponent<UnitInfo>().SetBlockingState(false);
+
+            var map = GridManager.instance.GenerateArrayWithUnits();
+            var characters = GridManager.instance.Characters;
+
+            // Generate turn of enemy
+            EnemyTurn turn = enemy.GetComponent<EnemyBehaviourEngine>().GenerateEnemyTurn(map, characters);
+
+            // Move enemy to destination
             Vector2Int start = enemy.GetComponent<UnitMovement>().GetGridCoordinates();
-            Vector2Int end = enemy.GetComponent<EnemyBehaviourEngine>().GenerateEnemyTurn(map);
-            var path = PathFinder.CalculateShortestPath(map, start, end);
-            _gridManager.UpdateUnitPosition(enemy, end);
-            yield return StartCoroutine(_gridManager.MoveCharacter(enemy, path));
+            GridManager.instance.UpdateUnitPosition(enemy, turn.Destination);
+            var path = PathFinder.CalculateShortestPath(map, start, turn.Destination);
+            yield return StartCoroutine(GridManager.instance.MoveCharacter(enemy, path));
+
+            // Execute Action
+            switch (turn.Action)
+            {
+                case Actions.Attack:
+                    GridManager.instance.Attack(enemy, turn.Direction);
+                    if (turn.AttacksTarget)
+                    {
+                        enemy.GetComponent<EnemyBehaviourEngine>().target = null;
+                    }
+                    break;
+                case Actions.Block:
+                    GridManager.instance.Block(enemy);
+                    break;
+                case Actions.Rest:
+                    GridManager.instance.Rest(enemy);
+                    break;
+            }
+
+            yield return new WaitForSeconds(2);
         }
 
         StartPlayerTurn();

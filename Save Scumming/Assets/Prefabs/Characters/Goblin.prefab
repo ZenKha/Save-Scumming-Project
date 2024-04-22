@@ -301,6 +301,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33a0d944b144b774a9eb4e461ef980aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  target: {fileID: 0}
 --- !u!114 &1955724216082877388
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -330,10 +331,10 @@ MonoBehaviour:
   _name: Goblin
   _movementRange: 5
   _damage: 3
-  _attackRange: 0
-  _pierce: 0
+  _attackRange: 1
+  _pierce: 1
   _accuracy: 75
-  _healPower: 0
+  _healPower: 2
   _maxHp: 10
   _hp: 10
   _isBlocking: 0

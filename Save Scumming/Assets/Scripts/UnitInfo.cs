@@ -105,7 +105,7 @@ public class UnitInfo : MonoBehaviour
         if (_hp == 0) _isAlive = false;
     }
 
-    public void SetBlockingState (bool value)
+    public void SetBlockingState(bool value)
     {
         _isBlocking = value;
     } 

@@ -391,25 +391,25 @@ public class GridManager : MonoBehaviour
                         if (block.GridX < posInfo.GridX && block.GridY == posInfo.GridY)
                         {
                             // Grid is rotated 90º counter-clockwise
-                            Attack(Vector2Int.left);
+                            Attack(_selectedCharacter, Vector2Int.left);
                         }
                         
                         // Attack down
                         if (block.GridX > posInfo.GridX && block.GridY == posInfo.GridY)
                         {
-                            Attack(Vector2Int.right);
+                            Attack(_selectedCharacter, Vector2Int.right);
                         }
 
                         // Attack left
                         if (block.GridX == posInfo.GridX && block.GridY < posInfo.GridY)
                         {
-                            Attack(Vector2Int.down);
+                            Attack(_selectedCharacter, Vector2Int.down);
                         }
 
                         // Attack right
                         if (block.GridX == posInfo.GridX && block.GridY > posInfo.GridY)
                         {
-                            Attack(Vector2Int.up);
+                            Attack(_selectedCharacter, Vector2Int.up);
                         }
                     }
 
@@ -426,12 +426,11 @@ public class GridManager : MonoBehaviour
                     // If the click is on the currently selected character, activate block
                     if (startClickPos == new Vector2Int(x, y))
                     {
-                        charInBlock.GetComponent<UnitInfo>().SetBlockingState(true);
+                        Block(_selectedCharacter);
 
                         // Conclude character turn
                         _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveActionToken();
                         ResetSelects();
-
                         return;
                     }
                 }
@@ -444,7 +443,7 @@ public class GridManager : MonoBehaviour
                     // If the click is on the currently selected character, activate block
                     if (startClickPos == new Vector2Int(x, y))
                     {
-                        charInBlock.GetComponent<UnitInfo>().ModifyHp(charInBlock.GetComponent<UnitInfo>().HealPower);
+                        Rest(_selectedCharacter);
 
                         // Conclude character turn
                         _selectedCharacter.GetComponent<PlayerUnitBehaviour>().RemoveActionToken();
@@ -457,12 +456,12 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void Attack(Vector2Int direction)
+    public void Attack(GameObject unit, Vector2Int direction)
     {
-        var stats = _selectedCharacter.GetComponent<UnitInfo>();
+        var stats = unit.GetComponent<UnitInfo>();
         var pierce = stats.Pierce;
         var acc = stats.Accuracy;
-        Vector2Int start = _selectedCharacter.GetComponent<UnitMovement>().GetGridCoordinates();
+        Vector2Int start = unit.GetComponent<UnitMovement>().GetGridCoordinates();
         Block block;
 
         for (int i = 1; i <= stats.AttackRange; i++)
@@ -493,13 +492,21 @@ public class GridManager : MonoBehaviour
 
             if (target != null)
             {
+                // Damage Text
+                var pos = target.transform.position + new Vector3(0, 2, 0);
+                var text = Instantiate(floatingText, pos, Quaternion.identity, target.transform);
+                text.transform.eulerAngles = new Vector3(45, -135, 0);
+
                 // Attack lands
                 if (Random.Range(0, 100) < acc)
                 {
                     int dmgFluct = Random.Range(-1, 1);
                     int damage = target.GetComponent<UnitInfo>().IsBlocking ? Mathf.FloorToInt((stats.Damage + dmgFluct)/2) : stats.Damage + dmgFluct;
                     target.GetComponent<UnitInfo>().ModifyHp(-damage);
+
+                    text.GetComponent<TMP_Text>().text = damage.ToString();
                     Debug.Log("Dealt " + damage + " damage to character in block (" + coords.x + "," + coords.y + ") with " + acc + "% accuracy");
+
                     pierce--;
 
                     if (!target.GetComponent<UnitInfo>().IsAlive)
@@ -509,12 +516,24 @@ public class GridManager : MonoBehaviour
                 } 
                 else
                 {
+                    text.GetComponent<TMP_Text>().text = "Miss";
                     Debug.Log("Attack missed to character in block (" + coords.x + "," + coords.y + ") with " + acc + "% accuracy");
                 }
             }
 
             acc -= 10;
         }
+    }
+
+    public void Block(GameObject unit)
+    {
+        unit.GetComponent<UnitInfo>().SetBlockingState(true); ;
+    }
+
+    public void Rest(GameObject unit)
+    {
+        var info = unit.GetComponent<UnitInfo>();
+        info.ModifyHp(info.HealPower);
     }
 
     private void KillUnit(GameObject unit)
