@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static UnityEngine.GraphicsBuffer;
 
 public enum BattleState { START, PLACE, PLAYERTURN, ENEMYTURN, WON, LOST}
 
@@ -70,7 +71,13 @@ public class BattleSystem : MonoBehaviour
         // Give action token to player units
         foreach (GameObject playerUnit in GridManager.instance.Characters)
         {
+            // Give action tokens
             playerUnit.GetComponent<PlayerUnitBehaviour>().GiveTurnTokens();
+
+            // Remove blocking and resting state in case it was used last turn
+            playerUnit.GetComponent<UnitInfo>().SetBlockingState(false);
+            playerUnit.GetComponent<AnimatorControllerScript>().SetBlocking(false);
+            playerUnit.GetComponent<AnimatorControllerScript>().SetResting(false);
         }
 
         GridManager.instance.ResetSelects();
@@ -94,6 +101,7 @@ public class BattleSystem : MonoBehaviour
         {
             // Remove blocking state in case it was used last turn
             enemy.GetComponent<UnitInfo>().SetBlockingState(false);
+            enemy.GetComponent<AnimatorControllerScript>().SetBlocking(false);
 
             var map = GridManager.instance.GenerateArrayWithUnits();
             var characters = GridManager.instance.Characters;
@@ -106,12 +114,13 @@ public class BattleSystem : MonoBehaviour
             GridManager.instance.UpdateUnitPosition(enemy, turn.Destination);
             var path = PathFinder.CalculateShortestPath(map, start, turn.Destination);
             yield return StartCoroutine(GridManager.instance.MoveCharacter(enemy, path));
+            yield return new WaitForSeconds(.5f);
 
             // Execute Action
             switch (turn.Action)
             {
                 case Actions.Attack:
-                    GridManager.instance.Attack(enemy, turn.Direction);
+                    StartCoroutine(GridManager.instance.Attack(enemy, turn.Direction));
                     if (turn.AttacksTarget)
                     {
                         enemy.GetComponent<EnemyBehaviourEngine>().target = null;
@@ -133,6 +142,10 @@ public class BattleSystem : MonoBehaviour
 
     public void Win()
     {
+        foreach (var character in GridManager.instance.Characters)
+        {
+            character.GetComponent<AnimatorControllerScript>().SetVictory();
+        }
         turnUI.SetActive(false);
         endScreenUI.SetActive(true);
         endText.text = "You Win!";
@@ -140,6 +153,10 @@ public class BattleSystem : MonoBehaviour
 
     public void Lose()
     {
+        foreach (var character in GridManager.instance.Enemies)
+        {
+            character.GetComponent<AnimatorControllerScript>().SetVictory();
+        }
         turnUI.SetActive(false);
         endScreenUI.SetActive(true);
         endText.text = "You Lose...";
