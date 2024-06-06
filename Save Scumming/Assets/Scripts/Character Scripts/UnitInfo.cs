@@ -1,10 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
+using Random = UnityEngine.Random;
+using static UnityEngine.GraphicsBuffer;
+using TMPro;
 
 public class UnitInfo : MonoBehaviour
 {
+    [Header("Unit Stats")]
     [SerializeField] private string _name;
     [SerializeField] private int _movementRange;
 
@@ -21,6 +26,7 @@ public class UnitInfo : MonoBehaviour
     [SerializeField] private bool _isBlocking = false;
     [SerializeField] private bool _isAlive = true;
 
+    [Space(5)] [Header("Prefabs")]
     [SerializeField] private Healthbar _healthbar;
 
     public string Name => _name;
@@ -34,6 +40,26 @@ public class UnitInfo : MonoBehaviour
     public int Hp => _hp;
     public bool IsBlocking => _isBlocking;
     public bool IsAlive => _isAlive;
+
+    public int TakeDamage(int value)
+    {
+        // Damage calculations
+        int dmgFluct = Random.Range(-1, 1);
+        int damage = _isBlocking ? Mathf.FloorToInt((value + dmgFluct) / 2) : value + dmgFluct;
+        damage = (damage < 0) ? 0 : damage;
+
+        ModifyHp(-damage);
+
+        // Target Animations
+        var animator = GetComponent<AnimatorControllerScript>();
+        animator.SetResting(false);
+
+        if (_isBlocking) animator.SetHitBlock();
+        else if (damage >= 5) animator.SetHitBig();
+        else animator.SetHitSmall();
+
+        return damage;
+    }
 
     /// <summary>
     /// Change health value of Unit by an ammount
@@ -102,7 +128,16 @@ public class UnitInfo : MonoBehaviour
 
         _healthbar.UpdateHealthBar(_maxHp, _hp);
 
-        if (_hp == 0) _isAlive = false;
+        if (_hp == 0)
+        {
+            _isAlive = false;
+            KillUnit();
+        }
+    }
+
+    private void KillUnit()
+    {
+        GridManager.instance.KillUnit(gameObject);
     }
 
     public void SetBlockingState(bool value)

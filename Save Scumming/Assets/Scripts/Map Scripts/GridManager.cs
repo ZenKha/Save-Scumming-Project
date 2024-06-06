@@ -486,11 +486,6 @@ public class GridManager : MonoBehaviour
 
         for (int i = 1; i <= stats.AttackRange; i++)
         {
-            if (pierce <= 0)
-            {
-                yield break;
-            }
-
             Vector2Int coords = start + (direction * i);
 
             //Check if coordinates are inside limits of grid
@@ -501,59 +496,12 @@ public class GridManager : MonoBehaviour
 
             block = _blocks.Find(b => b.GridX == coords.x && b.GridY == coords.y).GetComponent<Block>();
 
-            // Not clickable means its cover
-            if (!block.IsClickable)
-            {
-                pierce--;
-                acc -= 20;
-            }
-
             var target = block.GetCharacterInBlock();
 
             if (target != null)
             {
-                // Damage Text
-                var pos = target.transform.position + new Vector3(0, 2, 0);
-                var text = Instantiate(floatingText, pos, Quaternion.identity);
-                text.transform.eulerAngles = new Vector3(45, -135, 0);
-
-                // Attack lands
-                if (Random.Range(0, 100) < acc)
-                {
-                    // Damage calculations
-                    int dmgFluct = Random.Range(-1, 1);
-                    bool blocking = target.GetComponent<UnitInfo>().IsBlocking;
-                    int damage = blocking ? Mathf.FloorToInt((stats.Damage + dmgFluct)/2) : stats.Damage + dmgFluct;
-                    target.GetComponent<UnitInfo>().ModifyHp(-damage);
-
-                    // Target Rotation
-                    StartCoroutine(RotateUnit(target, direction3 * -1));
-
-                    // Target Animations
-                    var targetAnimator = target.GetComponent<AnimatorControllerScript>();
-                    targetAnimator.SetResting(false);
-                    if (blocking) targetAnimator.SetHitBlock();
-                    else if (damage >= 5) targetAnimator.SetHitBig(); 
-                    else targetAnimator.SetHitSmall();
-
-                    text.GetComponent<TMP_Text>().text = damage.ToString();
-                    Debug.Log("Dealt " + damage + " damage to character in block (" + coords.x + "," + coords.y + ") with " + acc + "% accuracy");
-
-                    pierce--;
-
-                    if (!target.GetComponent<UnitInfo>().IsAlive)
-                    {
-                        KillUnit(target);
-                    }
-                } 
-                else
-                {
-                    text.GetComponent<TMP_Text>().text = "Miss";
-                    Debug.Log("Attack missed to character in block (" + coords.x + "," + coords.y + ") with " + acc + "% accuracy");
-                }
+                StartCoroutine(RotateUnit(target, direction3 * -1));
             }
-
-            acc -= 10;
         }
     }
 
@@ -570,7 +518,7 @@ public class GridManager : MonoBehaviour
         info.ModifyHp(info.HealPower);
     }
 
-    private void KillUnit(GameObject unit)
+    public void KillUnit(GameObject unit)
     {
         // Player unit
         if (unit.GetComponent<PlayerUnitBehaviour>() != null)

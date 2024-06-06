@@ -92,8 +92,8 @@ GameObject:
   - component: {fileID: 7597600630684592309}
   - component: {fileID: 8644260270852237991}
   m_Layer: 0
-  m_Name: Character 2
-  m_TagString: Untagged
+  m_Name: Rogue
+  m_TagString: Character
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
